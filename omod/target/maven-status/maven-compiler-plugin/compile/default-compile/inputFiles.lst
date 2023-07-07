@@ -1,0 +1,3 @@
+/opt/develop/palladium/kenyaEMR/newModules/fhirexport/omod/src/main/java/org/openmrs/module/fhirexport/fragment/controller/UsersFragmentController.java
+/opt/develop/palladium/kenyaEMR/newModules/fhirexport/omod/src/main/java/org/openmrs/module/fhirexport/web/controller/FhirexportController.java
+/opt/develop/palladium/kenyaEMR/newModules/fhirexport/omod/src/main/java/org/openmrs/module/fhirexport/extension/html/AdminList.java

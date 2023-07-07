@@ -1,0 +1,2 @@
+org/openmrs/module/fhirexport/api/dao/FhirexportDaoTest.class
+org/openmrs/module/fhirexport/api/FhirexportServiceTest.class
