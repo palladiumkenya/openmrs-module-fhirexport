@@ -11,4 +11,11 @@
 	<packaging>jar</packaging>
 	<name>fhirexport API</name>
 	<description>API project for fhirexport</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>uiframework-api</artifactId>
+		</dependency>
+	</dependencies>
 </project>

@@ -1,6 +1,0 @@
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/api/FhirexportService.java
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/api/dao/FhirexportDao.java
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/Item.java
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/FhirexportActivator.java
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/FhirexportConfig.java
-/opt/develop/palladium/kenyaEMR/newModules/fhirexport/api/src/main/java/org/openmrs/module/fhirexport/api/impl/FhirexportServiceImpl.java

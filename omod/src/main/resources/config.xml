@@ -61,17 +61,14 @@
 	 /Required Privileges -->
 
 
-	<!-- Required Global Properties 
+
 	<globalProperty>
-		<property>@MODULE_ID@.someProperty</property>
+		<property>fhirexport.fhir_export_dir</property>
 		<defaultValue></defaultValue>
 		<description>
-			A description of the global property goes here.  The description
-			should explain enough for administrators to understand the purpose
-			and possible values for the global property.
+			An absolute path to a write-enabled directory where FHIR export module writes exported FHIR objects
 		</description>
 	</globalProperty>
-	/Required Global Properties -->
 	
 	<!--
 	<dwr>

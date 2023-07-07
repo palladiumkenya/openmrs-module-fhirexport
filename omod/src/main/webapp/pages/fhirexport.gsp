@@ -1,15 +1,17 @@
 <% ui.decorateWith("appui", "standardEmrPage") %>
+<style>
+.fhirexport-page-content {
+    padding: 5px;
+    background-color: white;
+}
 
-Hello, world.
+</style>
+<div class="fhirexport-page-content">
+    <fieldset>
+        <legend>Export FHIR Objects</legend>
 
-<% if (context.authenticated) { %>
-    And a special hello to you, $context.authenticatedUser.personName.fullName.
-    Your roles are:
-    <% context.authenticatedUser.roles.findAll { !it.retired }.each { %>
-        $it.role ($it.description)
-    <% } %>
-<% } else { %>
-    You are not logged in.
-<% } %>
+        <button>Export to file system</button>
+        <button>Send to FHIR Server</button>
 
-${ ui.includeFragment("fhirexport", "users") }
+    </fieldset>
+</div>

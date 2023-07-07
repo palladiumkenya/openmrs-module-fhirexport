@@ -1,6 +1,0 @@
-org/openmrs/module/fhirexport/FhirexportConfig.class
-org/openmrs/module/fhirexport/Item.class
-org/openmrs/module/fhirexport/FhirexportActivator.class
-org/openmrs/module/fhirexport/api/FhirexportService.class
-org/openmrs/module/fhirexport/api/impl/FhirexportServiceImpl.class
-org/openmrs/module/fhirexport/api/dao/FhirexportDao.class
