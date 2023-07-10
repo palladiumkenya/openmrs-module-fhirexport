@@ -91,13 +91,19 @@
 				<scope>provided</scope>
 			</dependency>
 
-
 			<dependency>
 				<groupId>org.openmrs.module</groupId>
 				<artifactId>webservices.rest-omod-common</artifactId>
 				<version>${webservicesRestVersion}</version>
 				<classifier>tests</classifier>
 				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.module</groupId>
+				<artifactId>fhir2-api</artifactId>
+				<version>${fhir2Version}</version>
+				<scope>provided</scope>
 			</dependency>
 
 			<dependency>
@@ -199,5 +205,6 @@
 		<appframeworkVersion>2.13.0</appframeworkVersion>
 		<legacyUiVersion>1.5.0</legacyUiVersion>
 		<uiframeworkVersion>3.15.0</uiframeworkVersion>
+		<fhir2Version>1.9.0</fhir2Version>
 	</properties>
 </project>
