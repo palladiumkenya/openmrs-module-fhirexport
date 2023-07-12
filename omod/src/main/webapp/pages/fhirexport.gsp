@@ -14,7 +14,7 @@
             jq.getJSON('${ui.actionLink("fhirexport", "exportData", "generateAndPostFhirObject")}'
             ).success(function (result) {
                 var status = result.success === true ? 'FHIR object generated and exported successfully' : 'There was a problem generating FHIR objects. Please check logs for more information';
-                console.log("Server result: " + status);
+                console.log("Server result: " + result.payload);
             });
 
         });

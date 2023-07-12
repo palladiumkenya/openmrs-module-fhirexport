@@ -26,10 +26,10 @@ public class ExportDataFragmentController {
 	
 	public SimpleObject generateAndPostFhirObject(UiUtils ui, @SpringBean ResourceFactory resourceFactory) {
 		
-		ExportFhirObject.generate();
+		String result = ExportFhirObject.generate();
 		SimpleObject summary = new SimpleObject();
 		summary.put("success", "true");
-		summary.put("payload", summary.toString());
+		summary.put("payload", result);
 		return summary;
 	}
 	

@@ -18,10 +18,12 @@ import org.hl7.fhir.r4.model.Resource;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.FormService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.providers.r4.ObservationFhirResourceProvider;
@@ -29,9 +31,13 @@ import org.openmrs.module.fhir2.providers.r4.PatientFhirResourceProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Holder for code that generates FHIR objects
@@ -40,7 +46,7 @@ public class ExportFhirObject {
 	
 	public static final String OPENMRS_ID_TYPE_UUID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
 	
-	public static void generate() {
+	public static String generate() {
 		
 		// Define all forms of interest
 		EncounterService encounterService = Context.getEncounterService();
@@ -68,6 +74,8 @@ public class ExportFhirObject {
 		EncounterType discEncType = encounterService.getEncounterTypeByUuid(hivDiscontinuationEncTypeUuid);
 		Form hivProgramDiscontinuationForm = Context.getFormService().getFormByUuid(hivProgramDiscontinuationFormUuid);
 		
+		String arvRegimenConceptUuid = "1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+		
 		Map<String, IBaseBundle> obsCache = new HashMap<String, IBaseBundle>();
 		PatientFhirResourceProvider patientResourceProvider = Context.getRegisteredComponent(
 		    "patientFhirR4ResourceProvider", PatientFhirResourceProvider.class);
@@ -93,8 +101,9 @@ public class ExportFhirObject {
 			
 			// generate observation objects
 			//1. get all hiv enrolment encounters
-			//2. get all hiv follow up encounters
-			//3. get all hiv program discontinuation encounters
+			//2. get ART start encounter
+			//3. get all hiv follow up encounters
+			//4. get all hiv program discontinuation encounters
 			List<Encounter> followupEncounters = allEncounters(patient, followUpEncType,
 			    Arrays.asList(hivVisitSummaryForm, hivVisitPoCForm));
 			
@@ -104,10 +113,19 @@ public class ExportFhirObject {
 			List<Encounter> hivDiscontinuationEncounters = allEncounters(patient, discEncType,
 			    Arrays.asList(hivProgramDiscontinuationForm));
 			
+			Encounter artStartEncounter = getOriginalARTStartEncounter(patient);
+			//On ART -- find if client has active ART
+			
 			if (!hivEnrolmentEncounters.isEmpty()) {
 				System.out.println("HIV enrolment encounters: " + hivEnrolmentEncounters.size());
 				addEncounterObsToBundle(hivEnrolmentEntryPointConceptUuid, obsResourceProvider, patientReference,
 				    hivEnrolmentEncounters, (Bundle) bundle);
+			}
+			
+			if (artStartEncounter != null) {
+				System.out.println("ART start encounter");
+				addEncounterObsToBundle(arvRegimenConceptUuid, obsResourceProvider, patientReference,
+				    Arrays.asList(artStartEncounter), (Bundle) bundle);
 			}
 			
 			if (!followupEncounters.isEmpty()) {
@@ -130,19 +148,17 @@ public class ExportFhirObject {
 				System.out.println(FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
 				        .encodeResourceToString(bundle));
 				
+				String bundleStringified = FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
+				        .encodeResourceToString(bundle);
+				return bundleStringified;
+				
 				// client.transaction().withBundle(bundle).execute();
 			}
 			catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
-		
-		/**
-		 * Flow: Get all patients, Loop through all patients: generate patient resource generate
-		 * observation resource(s) for required data add to bundle send to fhir server Questions: 1.
-		 * Do we need all encounters, or just some? i.e. last, first, etc 2. Should we Adopted:
-		 * Generate all patient resources and send Generate all observations and send
-		 */
+		return null;
 		
 	}
 	
@@ -203,17 +219,40 @@ public class ExportFhirObject {
 		return encounters;
 	}
 	
-	/**
-	 * Gets the last encounter of a specific type and/or form for a patient
-	 * 
-	 * @param patient
-	 * @param type
-	 * @param forms
-	 * @return
-	 */
-	public static Encounter lastEncounter(Patient patient, EncounterType type, List<Form> forms) {
-		List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null, null, null, forms,
-		    Collections.singleton(type), null, null, null, false);
-		return encounters.size() > 0 ? encounters.get(encounters.size() - 1) : null;
+	public static Encounter getOriginalARTStartEncounter(Patient patient) {
+		String DRUG_REGIMEN_EDITOR_FORM_UUID = "da687480-e197-11e8-9f32-f2801f1b9fd1";
+		String DRUG_REGIMEN_EDITOR_ENC_TYPE_UUID = "7dffc392-13e7-11e9-ab14-d663bd873d93";
+		
+		FormService formService = Context.getFormService();
+		EncounterService encounterService = Context.getEncounterService();
+		String ARV_TREATMENT_PLAN_EVENT_CONCEPT = "1255AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+		
+		EncounterType et = encounterService.getEncounterTypeByUuid(DRUG_REGIMEN_EDITOR_ENC_TYPE_UUID);
+		Form form = formService.getFormByUuid(DRUG_REGIMEN_EDITOR_FORM_UUID);
+		
+		List<Encounter> encs = allEncounters(patient, et, Arrays.asList(form));
+		NavigableMap<Date, Encounter> programEncs = new TreeMap<Date, Encounter>();
+		for (Encounter e : encs) {
+			if (e != null) {
+				Set<Obs> obs = e.getObs();
+				if (isARTStartEncounter(obs, ARV_TREATMENT_PLAN_EVENT_CONCEPT)) {
+					programEncs.put(e.getEncounterDatetime(), e);
+				}
+			}
+		}
+		if (!programEncs.isEmpty()) {
+			return programEncs.firstEntry().getValue();
+		}
+		return null;
 	}
+	
+	public static boolean isARTStartEncounter(Set<Obs> obs, String conceptUuidToMatch) {
+		for (Obs o : obs) {
+			if (o.getConcept().getUuid().equals(conceptUuidToMatch)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 }
