@@ -9,6 +9,8 @@
  */
 package org.openmrs.module.fhirexport.fragment.controller;
 
+import java.util.Collections;
+
 import org.openmrs.module.fhirexport.export.ExportFhirObject;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
@@ -26,7 +28,7 @@ public class ExportDataFragmentController {
 	
 	public SimpleObject generateAndPostFhirObject(UiUtils ui, @SpringBean ResourceFactory resourceFactory) {
 		
-		String result = ExportFhirObject.generate();
+		String result = new ExportFhirObject(Collections.singletonList(39857)).toString();
 		SimpleObject summary = new SimpleObject();
 		summary.put("success", "true");
 		summary.put("payload", result);
