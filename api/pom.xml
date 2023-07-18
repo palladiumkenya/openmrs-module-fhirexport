@@ -17,10 +17,67 @@
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>uiframework-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>org.hl7.fhir.r4</artifactId>
+			<version>${fhir-core.version}</version>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>ca.uhn.hapi.fhir</groupId>
+					<artifactId>hapi-fhir-base</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>fhir2-api</artifactId>
+			<version>${fhir2Version}</version>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>xpp3</groupId>
+					<artifactId>xpp3_xpath</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ca.uhn.hapi.fhir</groupId>
+					<artifactId>hapi-fhir-converter</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ca.uhn.hapi.fhir</groupId>
+					<artifactId>hapi-fhir-base</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ca.uhn.hapi.fhir</groupId>
+					<artifactId>hapi-fhir-caching-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ca.uhn.hapi.fhir</groupId>
+					<artifactId>hapi-fhir-caching-caffeine</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-base</artifactId>
+			<version>5.4.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>fhir2-api-2.1</artifactId>
+			<version>${fhir2Version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>fhir2-api-2.2</artifactId>
+			<version>${fhir2Version}</version>
+			<scope>provided</scope>
+		</dependency>
+
 	</dependencies>
 </project>
