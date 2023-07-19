@@ -29,6 +29,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.providers.r4.ObservationFhirResourceProvider;
 import org.openmrs.module.fhir2.providers.r4.PatientFhirResourceProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -46,7 +47,34 @@ public class ExportFhirObject {
 	
 	public static final String OPENMRS_ID_TYPE_UUID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
 	
-	public static String generate() {
+	public ExportFhirObject(List<Integer> controlPatientIds) {
+		this.controlPatientIds = controlPatientIds;
+	}
+	
+	public ExportFhirObject() {
+	}
+	
+	public IBaseResource getBundle() {
+		return bundle;
+	}
+	
+	public void setBundle(IBaseResource bundle) {
+		this.bundle = bundle;
+	}
+	
+	private IBaseResource bundle;
+	
+	public List<Integer> getControlPatientIds() {
+		return controlPatientIds;
+	}
+	
+	public void setControlPatientIds(List<Integer> controlPatientIds) {
+		this.controlPatientIds = controlPatientIds;
+	}
+	
+	private List<Integer> controlPatientIds;
+	
+	public IBaseResource generate() {
 		
 		// Define all forms of interest
 		EncounterService encounterService = Context.getEncounterService();
@@ -82,13 +110,20 @@ public class ExportFhirObject {
 		ObservationFhirResourceProvider obsResourceProvider = Context.getRegisteredComponent(
 		    "observationFhirR4ResourceProvider", ObservationFhirResourceProvider.class);
 		
-		List<Integer> controlPatientIds = Arrays.asList(39857);
-		//for (Patient patient : Context.getPatientService().getAllPatients(false)) {
-		for (Integer patientId : controlPatientIds) {
+		// List<Patient> controlPatients = Collections.singletonList(Context.getPatientService().getPatient(39857));
+		List<Patient> controlPatients = new ArrayList<Patient>();
+		if (this.controlPatientIds == null || this.controlPatientIds.isEmpty()) {
+			controlPatients = Context.getPatientService().getAllPatients(false);
+		} else {
+			for (Integer i : this.controlPatientIds) {
+				controlPatients.add(Context.getPatientService().getPatient(this.controlPatientIds.get(i)));
+			}
+		}
+		
+		Bundle bundle = new Bundle();
+		for (Patient patient : controlPatients) {
 			
 			// generate patient objects
-			IBaseBundle bundle = new Bundle();
-			Patient patient = Context.getPatientService().getPatient(patientId);
 			PatientIdentifierType openmrsIdType = patientService.getPatientIdentifierTypeByUuid(OPENMRS_ID_TYPE_UUID);
 			PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType); // all patients have openmrs id thus the preference
 			
@@ -97,7 +132,7 @@ public class ExportFhirObject {
 			patientParam.setValue(patient.getUuid());
 			patientReference.addValue(new ReferenceOrListParam().add(patientParam));
 			
-			addPatientObjectToBundle(openmrsId.getIdentifier(), patientResourceProvider, (Bundle) bundle);
+			addPatientObjectToBundle(openmrsId.getIdentifier(), patientResourceProvider, bundle);
 			
 			// generate observation objects
 			//1. get all hiv enrolment encounters
@@ -119,47 +154,29 @@ public class ExportFhirObject {
 			if (!hivEnrolmentEncounters.isEmpty()) {
 				System.out.println("HIV enrolment encounters: " + hivEnrolmentEncounters.size());
 				addEncounterObsToBundle(hivEnrolmentEntryPointConceptUuid, obsResourceProvider, patientReference,
-				    hivEnrolmentEncounters, (Bundle) bundle);
+				    hivEnrolmentEncounters, bundle);
 			}
 			
 			if (artStartEncounter != null) {
 				System.out.println("ART start encounter");
 				addEncounterObsToBundle(arvRegimenConceptUuid, obsResourceProvider, patientReference,
-				    Arrays.asList(artStartEncounter), (Bundle) bundle);
+				    Arrays.asList(artStartEncounter), bundle);
 			}
 			
 			if (!followupEncounters.isEmpty()) {
 				System.out.println("HIV followup encounters: " + followupEncounters.size());
 				addEncounterObsToBundle(hivFollowupTCAConceptUuid, obsResourceProvider, patientReference,
-				    followupEncounters, (Bundle) bundle);
+				    followupEncounters, bundle);
 			}
 			
 			if (!hivDiscontinuationEncounters.isEmpty()) {
 				System.out.println("HIV program discontinuation encounters: " + hivDiscontinuationEncounters.size());
 				addEncounterObsToBundle(hivDiscontinuationReason, obsResourceProvider, patientReference,
-				    hivDiscontinuationEncounters, (Bundle) bundle);
+				    hivDiscontinuationEncounters, bundle);
 			}
 			
-			IGenericClient client = FhirContext.forCached(FhirVersionEnum.R4).newRestfulGenericClient(
-			    "http://localhost:8080/fhir");
-			BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor("", "");
-			client.registerInterceptor(authInterceptor);
-			try {
-				System.out.println(FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
-				        .encodeResourceToString(bundle));
-				
-				String bundleStringified = FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
-				        .encodeResourceToString(bundle);
-				return bundleStringified;
-				
-				// client.transaction().withBundle(bundle).execute();
-			}
-			catch (Exception ex) {
-				ex.printStackTrace();
-			}
 		}
-		return null;
-		
+		return bundle;
 	}
 	
 	private static void addEncounterObsToBundle(String variableConceptUuid,
@@ -253,6 +270,26 @@ public class ExportFhirObject {
 			}
 		}
 		return false;
+	}
+	
+	@Override
+	public String toString() {
+		bundle = this.generate();
+		return FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
+		        .encodeResourceToString(this.bundle);
+	}
+	
+	public void sendBundle(Bundle bundle) {
+		IGenericClient client = FhirContext.forCached(FhirVersionEnum.R4).newRestfulGenericClient(
+		    "http://localhost:8080/fhir");
+		BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor("", "");
+		client.registerInterceptor(authInterceptor);
+		try {
+			client.transaction().withBundle(bundle).execute();
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 	
 }
