@@ -67,12 +67,28 @@
 
 	<globalProperty>
 		<property>fhirexport.fhir_export_dir</property>
-		<defaultValue></defaultValue>
+		<defaultValue>src/main/resource</defaultValue>
 		<description>
 			An absolute path to a write-enabled directory where FHIR export module writes exported FHIR objects
 		</description>
 	</globalProperty>
+
+	<globalProperty>
+		<property>fhirexport.fhir_export_batch_size</property>
+		<defaultValue>10</defaultValue>
+		<description>
+			The maximum number of patients to be contained in a fhir export bundle
+		</description>
+	</globalProperty>
 	
+	<globalProperty>
+		<property>fhirexport.fhir_export_server_url</property>
+		<defaultValue>http://localhost:8081/fhir</defaultValue>
+		<description>
+			The URL of the HAPI FHIR Server where the data will be posted
+		</description>
+	</globalProperty>
+
 	<!--
 	<dwr>
 		<allow>
