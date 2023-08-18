@@ -1,0 +1,175 @@
+{
+    "resourceType": "Bundle",
+    "entry": [ {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "7b920b98-ac04-44be-9135-4d7e039d6cda",
+        "meta": {
+          "lastUpdated": "2020-07-02T10:48:06.000+03:00"
+        },
+        "identifier": [ {
+          "id": "4ed23c7e-2cae-4841-84bb-b126730002aa",
+          "extension": [ {
+            "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+            "valueReference": {
+              "reference": "Location/b547e305-dbf7-4d19-9bb4-20394a910163",
+              "type": "Location",
+              "display": "Location-7031"
+            }
+          } ],
+          "use": "official",
+          "type": {
+            "coding": [ {
+              "code": "dfacd928-0370-4315-99d7-6ec1c9f7ae76"
+            } ],
+            "text": "OpenMRS ID"
+          },
+          "value": "MGHPCE"
+        }, {
+          "id": "4b9e3685-4e2e-4ce3-86ae-969b75ee6765",
+          "extension": [ {
+            "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+            "valueReference": {
+              "reference": "Location/b547e305-dbf7-4d19-9bb4-20394a910163",
+              "type": "Location",
+              "display": "Location-7031"
+            }
+          } ],
+          "use": "usual",
+          "type": {
+            "coding": [ {
+              "code": "b4d66522-11fc-45c7-83e3-39a1af21ae0d"
+            } ],
+            "text": "Patient Clinic Number"
+          },
+          "value": "1068700123"
+        }, {
+          "id": "1129ffee-a246-4268-8511-c81838c3f0f3",
+          "extension": [ {
+            "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+            "valueReference": {
+              "reference": "Location/b547e305-dbf7-4d19-9bb4-20394a910163",
+              "type": "Location",
+              "display": "Location-7031"
+            }
+          } ],
+          "use": "usual",
+          "type": {
+            "coding": [ {
+              "code": "05ee9cf4-7242-4a17-b4d4-00f707265c8a"
+            } ],
+            "text": "Unique Patient Number"
+          },
+          "value": "1068700123"
+        }, {
+          "id": "20f60042-6944-4779-9a17-62d2d401bc37",
+          "extension": [ {
+            "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+            "valueReference": {
+              "reference": "Location/b547e305-dbf7-4d19-9bb4-20394a910163",
+              "type": "Location",
+              "display": "Location-7031"
+            }
+          } ],
+          "use": "usual",
+          "type": {
+            "coding": [ {
+              "code": "49af6cdc-7968-4abb-bf46-de10d7f4859f"
+            } ],
+            "text": "National ID"
+          },
+          "value": "13272342"
+        }, {
+          "id": "cb2adb43-cf90-4554-9697-898e2a6f6df6",
+          "extension": [ {
+            "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+            "valueReference": {
+              "reference": "Location/b547e305-dbf7-4d19-9bb4-20394a910163",
+              "type": "Location",
+              "display": "Location-7031"
+            }
+          } ],
+          "use": "usual",
+          "type": {
+            "coding": [ {
+              "code": "f85081e2-b4be-4e48-b3a4-7994b69bb101"
+            } ],
+            "text": "National Unique patient identifier"
+          },
+          "value": "MOH1668680086"
+        } ],
+        "active": true,
+        "gender": "male",
+        "birthDate": "1973-12-12",
+        "deceasedBoolean": false
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient"
+      }
+    }, {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "1c4c5f3e-19fa-4eaf-85f9-e5fbe003ea5f",
+        "meta": {
+          "lastUpdated": "2023-03-01T09:57:21.000+03:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [ {
+            "code": "5096AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "display": "Concept #5096"
+          } ],
+          "text": "Concept #5096"
+        },
+        "subject": {
+          "reference": "Patient/7b920b98-ac04-44be-9135-4d7e039d6cda",
+          "type": "Patient",
+          "display": " (OpenMRS ID: MGHPCE)"
+        },
+        "encounter": {
+          "reference": "Encounter/41e38888-374a-45f6-a622-4600e33a66fd",
+          "type": "Encounter"
+        },
+        "effectiveDateTime": "2023-02-23T09:55:00+03:00",
+        "issued": "2023-03-01T09:57:21.000+03:00",
+        "valueDateTime": "2023-05-16T00:00:00+03:00"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    }, {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "8f60eecc-bacc-4cf6-83f7-75291e365c39",
+        "meta": {
+          "lastUpdated": "2023-05-16T15:29:35.000+03:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [ {
+            "code": "5096AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "display": "Concept #5096"
+          } ],
+          "text": "Concept #5096"
+        },
+        "subject": {
+          "reference": "Patient/7b920b98-ac04-44be-9135-4d7e039d6cda",
+          "type": "Patient",
+          "display": " (OpenMRS ID: MGHPCE)"
+        },
+        "encounter": {
+          "reference": "Encounter/f9fd5be1-abc2-4191-9fa0-6bec622a4a77",
+          "type": "Encounter"
+        },
+        "effectiveDateTime": "2023-05-16T15:26:02+03:00",
+        "issued": "2023-05-16T15:29:35.000+03:00",
+        "valueDateTime": "2023-08-16T00:00:00+03:00"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    } ]
+  }
