@@ -1,5 +1,21 @@
 package org.openmrs.module.fhirexport.export;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.FhirVersionEnum;
 import ca.uhn.fhir.rest.api.server.IBundleProvider;
@@ -11,9 +27,12 @@ import ca.uhn.fhir.rest.param.ReferenceParam;
 import ca.uhn.fhir.rest.param.TokenAndListParam;
 import ca.uhn.fhir.rest.param.TokenOrListParam;
 import ca.uhn.fhir.rest.param.TokenParam;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Resource;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
@@ -29,17 +48,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.providers.r4.ObservationFhirResourceProvider;
 import org.openmrs.module.fhir2.providers.r4.PatientFhirResourceProvider;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
-import java.util.TreeMap;
-
 /**
  * Holder for code that generates FHIR objects
  */
@@ -47,7 +55,59 @@ public class ExportFhirObject {
 	
 	public static final String OPENMRS_ID_TYPE_UUID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
 	
-	public ExportFhirObject(List<Integer> controlPatientIds) {
+	private static final String FHIR_EXPORT_BATCH_SIZE = "fhirexport.fhir_export_batch_size";
+	
+	private static final String FHIR_EXPORT_PATH = "fhirexport.fhir_export_dir";
+	
+	private static final String FHIR_EXPORT_URL = "fhir_export_server_url";
+	
+	public String getExportUrl() {
+		return exportUrl;
+	}
+	
+	public void setExportUrl(String exportUrl) {
+		this.exportUrl = exportUrl;
+	}
+	
+	private String exportUrl;
+	
+	public boolean isExportToFileSystem() {
+		return exportToFileSystem;
+	}
+	
+	public void setExportToFileSystem(boolean exportToFileSystem) {
+		this.exportToFileSystem = exportToFileSystem;
+	}
+	
+	private boolean exportToFileSystem;
+	
+	public boolean isSendToFhirServer() {
+		return sendToFhirServer;
+	}
+	
+	public void setSendToFhirServer(boolean sendToFhirServer) {
+		this.sendToFhirServer = sendToFhirServer;
+	}
+	
+	private boolean sendToFhirServer;
+	
+	public String getExportDirectory() {
+		return exportDirectory;
+	}
+	
+	public void setExportDirectory(String exportDirectory) {
+		this.exportDirectory = exportDirectory;
+	}
+	
+	private String exportDirectory;
+	
+	public List<String> getBundleCache() {
+		return bundleCache;
+	}
+	
+	private final List<String> bundleCache = new ArrayList<String>();
+	
+	public ExportFhirObject(List<String> controlPatientIds) {
 		this.controlPatientIds = controlPatientIds;
 	}
 	
@@ -64,17 +124,17 @@ public class ExportFhirObject {
 	
 	private IBaseResource bundle;
 	
-	public List<Integer> getControlPatientIds() {
+	public List<String> getControlPatientIds() {
 		return controlPatientIds;
 	}
 	
-	public void setControlPatientIds(List<Integer> controlPatientIds) {
+	public void setControlPatientIds(List<String> controlPatientIds) {
 		this.controlPatientIds = controlPatientIds;
 	}
 	
-	private List<Integer> controlPatientIds;
+	private List<String> controlPatientIds;
 	
-	public IBaseResource generate() {
+	public void generate() throws IOException {
 		
 		// Define all forms of interest
 		EncounterService encounterService = Context.getEncounterService();
@@ -115,14 +175,22 @@ public class ExportFhirObject {
 		if (this.controlPatientIds == null || this.controlPatientIds.isEmpty()) {
 			controlPatients = Context.getPatientService().getAllPatients(false);
 		} else {
-			for (Integer i : this.controlPatientIds) {
-				controlPatients.add(Context.getPatientService().getPatient(this.controlPatientIds.get(i)));
+			for (String id : this.controlPatientIds) {
+				controlPatients.add(Context.getPatientService().getPatient(Integer.valueOf(id)));
 			}
 		}
 		
+		int exportBatchSize = Context.getAdministrationService().getGlobalPropertyValue(FHIR_EXPORT_BATCH_SIZE, 10);
+		int batchCounter = 0;
+		int patientsCount = controlPatients.size();
 		Bundle bundle = new Bundle();
-		for (Patient patient : controlPatients) {
+		for (int i = 0; i < patientsCount; i++) {
+			// Set a random uuid value for the bundle
+			IIdType bundleId = FhirContext.forR4().getVersion().newIdType();
+			bundleId.setValue(UUID.randomUUID().toString());
+			bundle.setIdElement((IdType) bundleId);
 			
+			Patient patient = controlPatients.get(i);
 			// generate patient objects
 			PatientIdentifierType openmrsIdType = patientService.getPatientIdentifierTypeByUuid(OPENMRS_ID_TYPE_UUID);
 			PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType); // all patients have openmrs id thus the preference
@@ -175,8 +243,17 @@ public class ExportFhirObject {
 				    hivDiscontinuationEncounters, bundle);
 			}
 			
+			batchCounter++;
+			
+			// Once a batch is created, send it to the defined destination
+			if (batchCounter >= exportBatchSize || i == patientsCount - 1) {
+				batchCounter = 0;
+				this.bundle = bundle;
+				sendBundle(bundle);
+				bundleCache.add(bundle.getIdElement().getValue());
+				bundle = new Bundle();
+			}
 		}
-		return bundle;
 	}
 	
 	private static void addEncounterObsToBundle(String variableConceptUuid,
@@ -195,12 +272,12 @@ public class ExportFhirObject {
 			code.addAnd(codingToken);
 			
 			Bundle.BundleEntryRequestComponent request = new Bundle.BundleEntryRequestComponent();
-			request.setMethod(Bundle.HTTPVerb.POST).setUrl("Observation");
+			request.setMethod(Bundle.HTTPVerb.PUT).setUrl("Observation/" + encounter.getUuid());
 			
 			IBundleProvider results = obsResourceProvider.searchObservations(encounterReference, patientReference, null,
 			    null, null, null, null, null, code, null, null, null, null, null, null, null);
 			
-			System.out.println("FHIR Results: " + results.getAllResources().size());
+			// System.out.println("FHIR Results: " + results.getAllResources().size());
 			for (IBaseResource resource : results.getAllResources()) {
 				bundle.addEntry().setResource((Resource) resource).setRequest(request);
 			}
@@ -217,7 +294,7 @@ public class ExportFhirObject {
 		IBaseResource patientObject = resources.get(0);
 		
 		Bundle.BundleEntryRequestComponent request = new Bundle.BundleEntryRequestComponent();
-		request.setMethod(Bundle.HTTPVerb.PUT).setUrl("Patient");
+		request.setMethod(Bundle.HTTPVerb.PUT).setUrl("Patient/" + patientObject.getIdElement());
 		bundle.addEntry().setResource((Resource) patientObject).setRequest(request);
 		
 	}
@@ -274,22 +351,113 @@ public class ExportFhirObject {
 	
 	@Override
 	public String toString() {
-		bundle = this.generate();
+		if (this.bundle == null) {
+			try {
+				this.generate();
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
 		return FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
 		        .encodeResourceToString(this.bundle);
 	}
 	
-	public void sendBundle(Bundle bundle) {
-		IGenericClient client = FhirContext.forCached(FhirVersionEnum.R4).newRestfulGenericClient(
-		    "http://localhost:8080/fhir");
-		BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor("", "");
-		client.registerInterceptor(authInterceptor);
-		try {
-			client.transaction().withBundle(bundle).execute();
+	public ExportFhirObject(boolean exportToFileSystem, boolean sendToFhirServer, String exportDirectory) {
+		this.exportToFileSystem = exportToFileSystem;
+		this.sendToFhirServer = sendToFhirServer;
+		this.exportDirectory = exportDirectory;
+	}
+	
+	public ExportFhirObject(List<String> controlPatientIds, boolean exportToFileSystem, boolean sendToFhirServer,
+	    String exportDirectory) {
+		this.controlPatientIds = controlPatientIds;
+		this.exportToFileSystem = exportToFileSystem;
+		this.sendToFhirServer = sendToFhirServer;
+		this.exportDirectory = exportDirectory;
+	}
+	
+	public void sendBundle(Bundle bundle) throws IOException, RuntimeException {
+		
+		if (exportToFileSystem) {
+			if (this.exportDirectory == null) {
+				this.exportDirectory = Context.getAdministrationService()
+						.getGlobalPropertyValue(FHIR_EXPORT_PATH, "src/main/resources/");
+			}
+			
+			Date date = new Date();
+			String dateString = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+			String filePath = exportDirectory + bundle.getIdElement().getValue() + "-" + dateString + ".json";
+			java.io.File file = new java.io.File(filePath);
+			
+			if (file.exists()) {
+				java.io.File resourcesFile = new java.io.File(this.exportDirectory, file.getName());
+				copyFile(file, resourcesFile);
+			}
+			else {
+				BufferedWriter writer = null;
+				try (FileWriter fileWriter = new FileWriter(file)) {
+					String bundleJson = FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().setPrettyPrint(true)
+							.encodeResourceToString(bundle);
+					writer = new BufferedWriter(new FileWriter(file));
+					writer.write(bundleJson);
+					
+					fileWriter.write(bundleJson);
+					System.out.println("FHIR Bundle written to: " + file.getAbsolutePath());
+				}
+				catch (IOException e) {
+					throw e;
+				}
+				finally {
+					if (writer != null) {
+						writer.close();
+					}
+				}
+			}
 		}
-		catch (Exception ex) {
-			ex.printStackTrace();
+		
+		if (sendToFhirServer) {
+			if (StringUtils.isBlank(exportUrl)) {
+				exportUrl = Context.getAdministrationService()
+						.getGlobalPropertyValue(FHIR_EXPORT_URL, "http://localhost:8081/fhir");
+			}
+			
+			IGenericClient client = FhirContext.forR4().newRestfulGenericClient(exportUrl);
+			
+			// Set up basic authentication
+			BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor("username", "password");
+			client.registerInterceptor(authInterceptor);
+			
+			try {
+				client.transaction().withBundle(bundle).execute();
+				System.out.println("Bundle posted successfully!");
+			}
+			catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
 		}
 	}
 	
+	private static void copyFile(java.io.File sourceFile, java.io.File destFile) throws IOException {
+		java.io.FileInputStream inputStream = null;
+		java.io.FileOutputStream outputStream = null;
+		try {
+			inputStream = new java.io.FileInputStream(sourceFile);
+			outputStream = new java.io.FileOutputStream(destFile);
+			byte[] buffer = new byte[1024];
+			int length;
+			while ((length = inputStream.read(buffer)) > 0) {
+				outputStream.write(buffer, 0, length);
+			}
+		}
+		finally {
+			if (inputStream != null) {
+				inputStream.close();
+			}
+			if (outputStream != null) {
+				outputStream.close();
+			}
+		}
+	}
 }
