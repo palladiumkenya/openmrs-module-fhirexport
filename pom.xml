@@ -157,6 +157,12 @@
 				<scope>test</scope>
 			</dependency>
 
+			<dependency>
+				<groupId>org.openehealth.ipf.commons</groupId>
+				<artifactId>ipf-commons-ihe-fhir-core</artifactId>
+				<version>3.6.1</version>
+			</dependency>
+
 			<!-- Importing versions from refapp distro -->
 			<dependency>
 				<groupId>org.openmrs.distro</groupId>

@@ -1,8 +1,14 @@
 package org.openmrs.module.fhirexport.export;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,12 +34,19 @@ import ca.uhn.fhir.rest.param.TokenAndListParam;
 import ca.uhn.fhir.rest.param.TokenOrListParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Resource;
+import org.openehealth.ipf.commons.ihe.fhir.SslAwareApacheRestfulClientFactory;
+import org.openehealth.ipf.commons.ihe.fhir.translation.FhirSecurityInformation;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
@@ -47,6 +60,11 @@ import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.providers.r4.ObservationFhirResourceProvider;
 import org.openmrs.module.fhir2.providers.r4.PatientFhirResourceProvider;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
 /**
  * Holder for code that generates FHIR objects
@@ -422,12 +440,46 @@ public class ExportFhirObject {
 				exportUrl = Context.getAdministrationService()
 						.getGlobalPropertyValue(FHIR_EXPORT_URL, "http://localhost:8081/fhir");
 			}
-			
-			IGenericClient client = FhirContext.forR4().newRestfulGenericClient(exportUrl);
-			
+
+			FhirContext fhirContext = FhirContext.forR4();
+			//SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(new File("TRUSTSTORE_LOCATION"), "TRUSTSTORE_PASSWORD".toCharArray()).build();
+
+			// build ssl context
+			SSLContextBuilder builder = SSLContexts.custom();
+			try {
+				builder.loadTrustMaterial(null, new TrustStrategy() {
+					@Override
+					public boolean isTrusted(X509Certificate[] chain, String authType)
+							throws CertificateException {
+						return true;
+					}
+				});
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			} catch (KeyStoreException e) {
+				throw new RuntimeException(e);
+			}
+			SSLContext sslContext = null;
+			try {
+				sslContext = builder.build();
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			} catch (KeyManagementException e) {
+				throw new RuntimeException(e);
+			}
+
+			SslAwareApacheRestfulClientFactory factory = new SslAwareApacheRestfulClientFactory(fhirContext);
+
+			factory.setSecurityInformation(new FhirSecurityInformation(true, sslContext, null, "username", "password"));
+
+			IGenericClient client = fhirContext.newRestfulGenericClient(exportUrl);
+
+
+
 			// Set up basic authentication
 			BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor("username", "password");
 			client.registerInterceptor(authInterceptor);
+			fhirContext.setRestfulClientFactory(factory);
 			
 			try {
 				client.transaction().withBundle(bundle).execute();
@@ -437,6 +489,71 @@ public class ExportFhirObject {
 				throw new RuntimeException(ex);
 			}
 		}
+	}
+	
+	/**
+	 * Builds an SSL context for disabling/bypassing SSL verification
+	 * 
+	 * @return
+	 */
+	public static SSLConnectionSocketFactory sslConnectionSocketFactoryWithDisabledSSLVerification() {
+		SSLContextBuilder builder = SSLContexts.custom();
+		try {
+			builder.loadTrustMaterial(null, new TrustStrategy() {
+				
+				@Override
+				public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+					return true;
+				}
+			});
+		}
+		catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		catch (KeyStoreException e) {
+			throw new RuntimeException(e);
+		}
+		SSLContext sslContext = null;
+		try {
+			sslContext = builder.build();
+		}
+		catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		catch (KeyManagementException e) {
+			throw new RuntimeException(e);
+		}
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new X509HostnameVerifier() {
+			
+			@Override
+			public void verify(String host, SSLSocket ssl) throws IOException {
+			}
+			
+			@Override
+			public void verify(String host, X509Certificate cert) throws SSLException {
+			}
+			
+			@Override
+			public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
+			}
+			
+			@Override
+			public boolean verify(String s, SSLSession sslSession) {
+				return true;
+			}
+		});
+		return sslsf;
+	}
+	
+	/**
+	 * Default SSL context
+	 * 
+	 * @return
+	 */
+	public static SSLConnectionSocketFactory sslConnectionSocketFactoryDefault() {
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(SSLContexts.createDefault(),
+		        new String[] { "TLSv1.2" }, null, SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+		return sslsf;
 	}
 	
 	private static void copyFile(java.io.File sourceFile, java.io.File destFile) throws IOException {
