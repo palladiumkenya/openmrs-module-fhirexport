@@ -177,6 +177,7 @@ public class ExportFhirObject {
 		String hivProgramDiscontinuationFormUuid = "e3237ede-fa70-451f-9e6c-0908bc39f8b9";
 		String hivDiscontinuationEncTypeUuid = "2bdada65-4c72-4a48-8730-859890e25cee";
 		String hivDiscontinuationReason = "161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+		String effectiveTransferOutDate = "164384AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 		EncounterType discEncType = encounterService.getEncounterTypeByUuid(hivDiscontinuationEncTypeUuid);
 		Form hivProgramDiscontinuationForm = Context.getFormService().getFormByUuid(hivProgramDiscontinuationFormUuid);
 		
@@ -258,6 +259,8 @@ public class ExportFhirObject {
 			if (!hivDiscontinuationEncounters.isEmpty()) {
 				System.out.println("HIV program discontinuation encounters: " + hivDiscontinuationEncounters.size());
 				addEncounterObsToBundle(hivDiscontinuationReason, obsResourceProvider, patientReference,
+				    hivDiscontinuationEncounters, bundle);
+				addEncounterObsToBundle(effectiveTransferOutDate, obsResourceProvider, patientReference,
 				    hivDiscontinuationEncounters, bundle);
 			}
 			
