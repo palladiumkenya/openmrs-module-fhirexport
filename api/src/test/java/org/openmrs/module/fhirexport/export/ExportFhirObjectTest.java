@@ -27,7 +27,8 @@ public class ExportFhirObjectTest extends BaseModuleContextSensitiveTest {
 		ExportFhirObject exportFhirObject = new ExportFhirObject(Collections.singletonList("1458"));
 		try {
 			exportFhirObject.setSendToFhirServer(true);
-			exportFhirObject.setExportToFileSystem(true);
+			exportFhirObject.setExportToFileSystem(false);
+			exportFhirObject.setExportUrl("http://localhost:8082/fhir");
 			exportFhirObject.setExportDirectory(null);
 			exportFhirObject.generate();
 		}

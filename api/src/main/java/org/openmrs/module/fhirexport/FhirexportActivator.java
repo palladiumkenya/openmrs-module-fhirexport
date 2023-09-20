@@ -18,20 +18,20 @@ import org.openmrs.module.BaseModuleActivator;
  */
 public class FhirexportActivator extends BaseModuleActivator {
 	
-	private Log log = LogFactory.getLog(this.getClass());
+	/*private Log log = LogFactory.getLog(this.getClass());*/
 	
 	/**
 	 * @see #started()
 	 */
 	public void started() {
-		log.info("Started Fhirexport");
+		/*log.info("Started Fhirexport");*/
 	}
 	
 	/**
 	 * @see #shutdown()
 	 */
 	public void shutdown() {
-		log.info("Shutdown Fhirexport");
+		/*log.info("Shutdown Fhirexport");*/
 	}
 	
 }

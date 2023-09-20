@@ -97,10 +97,10 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
+		<!--<dependency>
 			<groupId>org.openehealth.ipf.commons</groupId>
 			<artifactId>ipf-commons-ihe-fhir-core</artifactId>
-		</dependency>
+		</dependency>-->
 
 	</dependencies>
 	<build>

@@ -38,10 +38,10 @@
 	</require_modules>
 	
 	<!-- Extensions -->
-	<extension>
+<!--	<extension>
 		<point>org.openmrs.admin.list</point>
 		<class>org.openmrs.module.fhirexport.extension.html.AdminList</class>
-	</extension>
+	</extension>-->
 
 	<aware_of_modules>
 		<aware_of_module>org.openmrs.module.legacyui</aware_of_module>
