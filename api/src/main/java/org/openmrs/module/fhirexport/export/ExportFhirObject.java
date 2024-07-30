@@ -157,6 +157,14 @@ public class ExportFhirObject {
 		// Define all forms of interest
 		EncounterService encounterService = Context.getEncounterService();
 		PatientService patientService = Context.getPatientService();
+		
+		// hts encounters and observations
+		
+		String htsTestingEncTypeUuid = "9c0a7a57-62ff-4f75-babe-5835b0e921b7";
+		String htsFinalResultConceptUuid = "159427AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // final result concept
+		String htsResultGivenToPatientConceptUuid = "164848AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // test result given concept
+		EncounterType htsTestingEncType = encounterService.getEncounterTypeByUuid(htsTestingEncTypeUuid);
+		
 		// hiv follow-up visit - interest is only on the visit date and appointment date given
 		String hivFollowupTCAConceptUuid = "5096AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // next appointment date concept
 		String hivFollowupEncounterTypeUuid = "a0034eee-1940-4e35-847f-97537a35d05e";
@@ -226,6 +234,9 @@ public class ExportFhirObject {
 			//2. get ART start encounter
 			//3. get all hiv follow up encounters
 			//4. get all hiv program discontinuation encounters
+			
+			List<Encounter> htsTestEncounters = allEncounters(patient, htsTestingEncType, null);
+			
 			List<Encounter> followupEncounters = allEncounters(patient, followUpEncType,
 			    Arrays.asList(hivVisitSummaryForm, hivVisitPoCForm));
 			
@@ -238,30 +249,34 @@ public class ExportFhirObject {
 			Encounter artStartEncounter = getOriginalARTStartEncounter(patient);
 			//On ART -- find if client has active ART
 			
+			if (!htsTestEncounters.isEmpty()) {
+				System.out.println("HTS testing encounters: " + htsTestEncounters.size());
+				addEncounterObsToBundle(Arrays.asList(htsFinalResultConceptUuid, htsResultGivenToPatientConceptUuid),
+				    obsResourceProvider, patientReference, hivEnrolmentEncounters, bundle);
+			}
+			
 			if (!hivEnrolmentEncounters.isEmpty()) {
 				System.out.println("HIV enrolment encounters: " + hivEnrolmentEncounters.size());
-				addEncounterObsToBundle(hivEnrolmentEntryPointConceptUuid, obsResourceProvider, patientReference,
-				    hivEnrolmentEncounters, bundle);
+				addEncounterObsToBundle(Arrays.asList(hivEnrolmentEntryPointConceptUuid), obsResourceProvider,
+				    patientReference, hivEnrolmentEncounters, bundle);
 			}
 			
 			if (artStartEncounter != null) {
 				System.out.println("ART start encounter");
-				addEncounterObsToBundle(arvRegimenConceptUuid, obsResourceProvider, patientReference,
+				addEncounterObsToBundle(Arrays.asList(arvRegimenConceptUuid), obsResourceProvider, patientReference,
 				    Arrays.asList(artStartEncounter), bundle);
 			}
 			
 			if (!followupEncounters.isEmpty()) {
 				System.out.println("HIV followup encounters: " + followupEncounters.size());
-				addEncounterObsToBundle(hivFollowupTCAConceptUuid, obsResourceProvider, patientReference,
+				addEncounterObsToBundle(Arrays.asList(hivFollowupTCAConceptUuid), obsResourceProvider, patientReference,
 				    followupEncounters, bundle);
 			}
 			
 			if (!hivDiscontinuationEncounters.isEmpty()) {
 				System.out.println("HIV program discontinuation encounters: " + hivDiscontinuationEncounters.size());
-				addEncounterObsToBundle(hivDiscontinuationReason, obsResourceProvider, patientReference,
-				    hivDiscontinuationEncounters, bundle);
-				addEncounterObsToBundle(effectiveTransferOutDate, obsResourceProvider, patientReference,
-				    hivDiscontinuationEncounters, bundle);
+				addEncounterObsToBundle(Arrays.asList(hivDiscontinuationReason, effectiveTransferOutDate),
+				    obsResourceProvider, patientReference, hivDiscontinuationEncounters, bundle);
 			}
 			
 			batchCounter++;
@@ -277,7 +292,7 @@ public class ExportFhirObject {
 		}
 	}
 	
-	private static void addEncounterObsToBundle(String variableConceptUuid,
+	private static void addEncounterObsToBundle(List<String> variableConceptUuids,
 	        ObservationFhirResourceProvider obsResourceProvider, ReferenceAndListParam patientReference,
 	        List<Encounter> encounters, Bundle bundle) {
 		for (Encounter encounter : encounters) {
@@ -286,21 +301,22 @@ public class ExportFhirObject {
 			ReferenceParam encounterParam = new ReferenceParam();
 			encounterParam.setValue(encounter.getUuid());
 			encounterReference.addValue(new ReferenceOrListParam().add(encounterParam));
-			
-			TokenAndListParam code = new TokenAndListParam();
-			TokenParam codingToken = new TokenParam();
-			codingToken.setValue(variableConceptUuid); // using the UUID in OpenMRS concept dictionary
-			code.addAnd(codingToken);
-			
-			Bundle.BundleEntryRequestComponent request = new Bundle.BundleEntryRequestComponent();
-			request.setMethod(Bundle.HTTPVerb.PUT).setUrl("Observation/" + encounter.getUuid());
-			
-			IBundleProvider results = obsResourceProvider.searchObservations(encounterReference, patientReference, null,
-			    null, null, null, null, null, code, null, null, null, null, null, null, null);
-			
-			// System.out.println("FHIR Results: " + results.getAllResources().size());
-			for (IBaseResource resource : results.getAllResources()) {
-				bundle.addEntry().setResource((Resource) resource).setRequest(request);
+			for (String variableConceptUuid : variableConceptUuids) {
+				TokenAndListParam code = new TokenAndListParam();
+				TokenParam codingToken = new TokenParam();
+				codingToken.setValue(variableConceptUuid); // using the UUID in OpenMRS concept dictionary
+				code.addAnd(codingToken);
+				
+				Bundle.BundleEntryRequestComponent request = new Bundle.BundleEntryRequestComponent();
+				request.setMethod(Bundle.HTTPVerb.PUT).setUrl("Observation/" + encounter.getUuid());
+				
+				IBundleProvider results = obsResourceProvider.searchObservations(encounterReference, patientReference, null,
+				    null, null, null, null, null, code, null, null, null, null, null, null, null);
+				
+				// System.out.println("FHIR Results: " + results.getAllResources().size());
+				for (IBaseResource resource : results.getAllResources()) {
+					bundle.addEntry().setResource((Resource) resource).setRequest(request);
+				}
 			}
 		}
 	}
