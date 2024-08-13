@@ -156,21 +156,6 @@
 				<version>1.5.2</version>
 				<scope>test</scope>
 			</dependency>
-
-			<dependency>
-				<groupId>org.openehealth.ipf.commons</groupId>
-				<artifactId>ipf-commons-ihe-fhir-core</artifactId>
-				<version>3.6.1</version>
-			</dependency>
-
-			<!-- Importing versions from refapp distro -->
-			<dependency>
-				<groupId>org.openmrs.distro</groupId>
-				<artifactId>referenceapplication</artifactId>
-				<version>2.4</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -204,7 +189,7 @@
 		<appframeworkVersion>2.13.0</appframeworkVersion>
 		<legacyUiVersion>1.5.0</legacyUiVersion>
 		<uiframeworkVersion>3.15.0</uiframeworkVersion>
-		<fhir2Version>1.9.0</fhir2Version>
+		<fhir2Version>2.0.0</fhir2Version>
 		<serialization.xstreamVersion>0.2.7</serialization.xstreamVersion>
 		<fhir-core.version>5.4.0</fhir-core.version>
 	</properties>
